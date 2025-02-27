@@ -36,6 +36,8 @@ public class FileServiceImpl implements FileService {
         try {
             Path resolvedFilePath = this.fileStorageLocation.resolve(filePath).normalize();
             Resource resource = new UrlResource(resolvedFilePath.toUri());
+            System.out.println("dd");
+            throw new Exception("upload file failed!")
             if (resource.exists()) {
                 return resource;
             } else {
@@ -62,6 +64,7 @@ public class FileServiceImpl implements FileService {
 
             FileOutputStream out = new FileOutputStream(resolvedFilePath.toFile());
             IOUtils.copy(inputStream, out);
+            throw new Exception("upload file failed!")
             out.close();
 //
 //            byte[] buffer = new byte[inputStream.available()];

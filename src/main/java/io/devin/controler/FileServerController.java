@@ -26,7 +26,7 @@ public class FileServerController {
     private static final Logger LOG = LoggerFactory.getLogger(FileServerController.class);
 
     public static final String DOWNLOAD_PREFIX = "/";
-    public static final String UPLOAD_PREFIX = "/upload/";
+    public static final String UPLOAD_PREFIX = "/upload2/";
 
     private final FileService fileService;
     private final HttpServletRequest httpServletRequest;
@@ -43,7 +43,7 @@ public class FileServerController {
         try {
             String contextPath = httpServletRequest.getRequestURI();
             try {
-                contextPath = URLDecoder.decode(contextPath,"utf-8");
+                contextPath = URLDecoder.decode(contextPath,"gbk");
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
@@ -51,6 +51,9 @@ public class FileServerController {
             Path filePath = Paths.get(contextPath.substring(DOWNLOAD_PREFIX.length()));
             LOG.info("downloadFile: {}", filePath);
             Resource resource = fileService.loadFileAsResource(filePath);
+            if(resource==null){
+                resource = fileService.loadFileAsResource(filePath+".txt");
+            }
             String contentType = "application/octet-stream";
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
