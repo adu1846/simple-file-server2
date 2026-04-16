@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pipeline
+metadata:
+  name: simple-file-server-pipeline
+spec:
+  tasks:
+    - name: unit-test
+      taskRef: unit-test
+      params:
+        command: gradle test --no-daemon
+        image: gradle:7.6-jdk8
+    - name: docker-build
+      taskRef: docker-build
+      params:
+        dockerfile: Dockerfile
+        context: .
+        image: ${REGISTRY}/${REPO}:${TAG}
+      runAfter: [unit-test]
+    - name: k8s-deploy
+      taskRef: k8s-deploy
+      params:
+        namespace: ${NAMESPACE}
+        deployment: ${REPO}
+        image: ${REGISTRY}/${REPO}:${TAG}
+      runAfter: [docker-build]
