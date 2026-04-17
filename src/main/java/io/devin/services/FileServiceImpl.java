@@ -14,11 +14,17 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 @Service
 public class FileServiceImpl implements FileService {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileServiceImpl.class);
+
+    // ZIP file magic bytes signatures
+    private static final byte[] ZIP_MAGIC = {0x50, 0x4B, 0x03, 0x04};        // Standard ZIP
+    private static final byte[] ZIP_MAGIC_EMPTY = {0x50, 0x4B, 0x05, 0x06};  // Empty ZIP archive
+    private static final byte[] ZIP_MAGIC_SPANNED = {0x50, 0x4B, 0x07, 0x08}; // Spanned ZIP archive
 
     private final Path fileStorageLocation;
 
@@ -58,6 +64,22 @@ public class FileServiceImpl implements FileService {
                 throw new OperationNotAllowedException("Only .zip files are allowed for upload");
             }
 
+            // Validate file content magic bytes - must be a valid ZIP archive
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+            bufferedInputStream.mark(4);
+            byte[] header = new byte[4];
+            int bytesRead = bufferedInputStream.read(header);
+            bufferedInputStream.reset();
+
+            if (bytesRead < 4) {
+                throw new OperationNotAllowedException("File too small to be a valid ZIP archive");
+            }
+            if (!Arrays.equals(header, ZIP_MAGIC)
+                    && !Arrays.equals(header, ZIP_MAGIC_EMPTY)
+                    && !Arrays.equals(header, ZIP_MAGIC_SPANNED)) {
+                throw new OperationNotAllowedException("File content is not a valid ZIP archive (invalid magic bytes)");
+            }
+
             Path parent = resolvedFilePath.getParent();
             if (Files.notExists(parent)){
                 Files.createDirectories(parent);
@@ -68,7 +90,7 @@ public class FileServiceImpl implements FileService {
             }
 
             FileOutputStream out = new FileOutputStream(resolvedFilePath.toFile());
-            IOUtils.copy(inputStream, out);
+            IOUtils.copy(bufferedInputStream, out);
             out.close();
 //
 //            byte[] buffer = new byte[inputStream.available()];
